@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NJ DDD Training Portal</title>
+  <meta name="description" content="AI & Human Coworker Training Portal for NJ DDD Adult Day Facilities">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  
+  <div class="app-container">
+    <header class="top-nav">
+      <div class="logo">NJ DDD Facility<span class="ai-badge">AI Powered</span></div>
+      <div class="user-profile">
+        <div class="avatar" style="background: linear-gradient(135deg, #FF6B6B, #FF8E53);">JS</div>
+        <span>Jane Smith (DSP)</span>
+      </div>
+    </header>
+
+    <main class="dashboard" id="dashboard">
+      <div class="hero-section">
+        <h1>Welcome to the Digital Standard of Excellence</h1>
+        <p>Select a training module to review DSP expectations, room logistics, and operational standards. AI-monitored insights integrated directly into your workflow.</p>
+      </div>
+
+      <div class="modules-grid" id="modulesGrid">
+        <!-- populated by js -->
+      </div>
+    </main>
+
+    <div class="presentation-view" id="presentationView">
+      <div class="presentation-header">
+        <button class="back-btn" id="backBtn">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+          Back to Dashboard
+        </button>
+        <h2 id="presentationTitle">Module Title</h2>
+      </div>
+
+      <div class="slide-container">
+        <div class="slide" id="currentSlide">
+          <div class="slide-media">
+            <img src="" id="slideImage" alt="Slide Graphic">
+          </div>
+          <div class="slide-content">
+            <h3 id="slideHeading">Heading</h3>
+            <div id="slideText" class="slide-text">Content goes here</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-controls">
+        <button id="prevBtn" class="control-btn" disabled>Previous</button>
+        <div class="slide-indicator" id="slideIndicator">1 / 5</div>
+        <button id="nextBtn" class="control-btn">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

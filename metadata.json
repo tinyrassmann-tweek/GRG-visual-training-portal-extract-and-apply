@@ -1,0 +1,7 @@
+{
+  "name": "Genesis Revitalization Group - Atlantic City, NJ",
+  "description": "The definitive NJ Developmental Disabilities Autonomous OS. Real-time GPS geofencing, AI-driven regulatory compliance (HIPAA, SOCIII), automated tier-based billing, and high-integrity emergency failsafe reporting centered on EXCELLENCE AS A STANDARD.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

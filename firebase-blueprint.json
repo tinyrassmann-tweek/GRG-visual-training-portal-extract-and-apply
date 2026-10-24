@@ -1,0 +1,524 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "Stores user profile information, roles, and onboarding progress.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["patient", "staff", "admin", "doctor"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "phoneNumber": { "type": "string" },
+        "specialty": { "type": "string" },
+        "bio": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "lastLoginAt": { "type": "string", "format": "date-time" },
+        "licensingNumber": { "type": "string" },
+        "accessType": { "type": "string", "enum": ["internal", "client", "restricted"] },
+        "onboardingProgress": {
+          "type": "object",
+          "properties": {
+            "trainingCompleted": { "type": "boolean" },
+            "fingerprintsDone": { "type": "boolean" },
+            "npiVerified": { "type": "boolean" },
+            "backgroundCheck": { "type": "boolean" },
+            "sopReviewed": { "type": "boolean" },
+            "firstLoginAt": { "type": "string", "format": "date-time" },
+            "passwordChanged": { "type": "boolean" },
+            "ndaSigned": { "type": "boolean" },
+            "aiConsentSigned": { "type": "boolean" },
+            "aiOperationalConsentSigned": { "type": "boolean" },
+            "aiCoworkerConsentSigned": { "type": "boolean" },
+            "danielleLawCompleted": { "type": "boolean" },
+            "komninosLawCompleted": { "type": "boolean" },
+            "incidentReportingCompleted": { "type": "boolean" },
+            "orientationCompleted": { "type": "boolean" },
+            "onboardingNotificationSent": { "type": "boolean" },
+            "signedAt": { "type": "string", "format": "date-time" }
+          }
+        }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "trainingModules": {
+      "title": "Training Module",
+      "description": "Definitions of mandatory and optional training courses.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string", "enum": ["Mandatory", "Orientation", "Clinical", "Safety", "Professional Development"] },
+        "timelineDays": { "type": "number", "description": "Required completion days from hire." },
+        "provider": { "type": "string", "enum": ["In-House", "College of Direct Support", "Boggs Center", "External"] },
+        "recertificationInterval": { "type": "number", "description": "Interval in months for renewal, if any." }
+      },
+      "required": ["title", "category", "provider"]
+    },
+    "staffTraining": {
+      "title": "Staff Training Record",
+      "description": "Records of individual staff training completions and certifications.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "staffId": { "type": "string" },
+        "staffEmail": { "type": "string" },
+        "moduleId": { "type": "string" },
+        "moduleTitle": { "type": "string" },
+        "status": { "type": "string", "enum": ["assigned", "in_progress", "completed", "expired", "needs_renewal"] },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "certificateUrl": { "type": "string" },
+        "reimbursementStatus": { "type": "string", "enum": ["n/a", "requested", "approved", "paid", "rejected"] }
+      },
+      "required": ["staffId", "moduleId", "status"]
+    },
+    "reimbursementRequests": {
+      "title": "Education Reimbursement",
+      "description": "Tracking for staff reimbursement requests for continued education.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "staffId": { "type": "string" },
+        "staffName": { "type": "string" },
+        "courseTitle": { "type": "string" },
+        "amount": { "type": "number" },
+        "receiptUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "reviewing", "approved", "denied", "paid"] },
+        "comments": { "type": "string" },
+        "requestedAt": { "type": "string", "format": "date-time" },
+        "processedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["staffId", "courseTitle", "amount", "requestedAt", "status"]
+    },
+    "applications": {
+      "title": "Job Application",
+      "description": "Stores initial interest and applications from potential hires.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "fullName": { "type": "string" },
+        "position": { "type": "string" },
+        "licensingNumber": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "contacted", "rejected"] },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["email", "fullName", "position", "licensingNumber", "submittedAt"]
+    },
+    "accessLogs": {
+      "title": "Access Log",
+      "description": "Logs every login attempt and security-related action.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "email": { "type": "string" },
+        "action": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ipAddress": { "type": "string" },
+        "userAgent": { "type": "string" },
+        "status": { "type": "string", "enum": ["success", "failure", "flagged"] },
+        "details": { "type": "string" }
+      },
+      "required": ["email", "action", "timestamp", "status"]
+    },
+    "licensing": {
+      "title": "Licensing",
+      "description": "Stores authorized client licensing numbers and their associated domains.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "licensingNumber": { "type": "string" },
+        "authorizedDomains": { "type": "array", "items": { "type": "string" } },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientName", "licensingNumber", "active"]
+    },
+    "appointments": {
+      "title": "Appointment",
+      "description": "Stores appointment details between patients and doctors.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "department": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled", "completed"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["patientId", "doctorId", "date", "time", "status"]
+    },
+    "formSubmissions": {
+      "title": "Form Submission",
+      "description": "Stores intake, lead, and SOP form submissions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "formType": { "type": "string", "enum": ["intake", "type", "sop", "lead"] },
+        "data": { "type": "object" },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "archived"] }
+      },
+      "required": ["formType", "data", "submittedAt"]
+    },
+    "tourBookings": {
+      "title": "Virtual Tour Booking",
+      "description": "Stores virtual tour requests.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "date": { "type": "string", "format": "date" },
+        "time": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed"] }
+      },
+      "required": ["name", "email", "date", "time"]
+    },
+    "complianceUpdates": {
+      "title": "Compliance Update",
+      "description": "Stores AI-scraped compliance updates from regulatory bodies and governing boards.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "source": { "type": "string" },
+        "regulatoryBody": { "type": "string" },
+        "policyArea": { "type": "string", "enum": ["HIPAA", "SOC3", "Staffing", "Facility", "Safety", "Other"] },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "actionRequired": { "type": "boolean" },
+        "actionItems": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["new", "acknowledged", "resolved", "action_item"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["source", "title", "summary", "severity", "status", "createdAt"]
+    },
+    "facilityPresence": {
+      "title": "Facility Presence",
+      "description": "Tracks currently present individuals (staff, clients, visitors).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string" },
+        "type": { "type": "string", "enum": ["staff", "client", "guardian", "executive", "visitor", "tour_guest"] },
+        "status": { "type": "string", "enum": ["in", "out", "off-site_respite"] },
+        "lastSeen": { "type": "string", "format": "date-time" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "geofenceStatus": { "type": "string", "enum": ["compliant", "breached"] },
+        "activityRoom": { "type": "string" }
+      },
+      "required": ["uid", "type", "status", "lastSeen"]
+    },
+    "billingLogs": {
+      "title": "Billing Log",
+      "description": "Tracks billing hours and client activity tiers.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "type": { "type": "string", "enum": ["clinical", "respite", "activity"] },
+        "tier": { "type": "string" },
+        "activityRoom": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "durationMinutes": { "type": "number" },
+        "amount": { "type": "number" },
+        "gpsVerified": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending", "approved", "processed"] },
+        "attestation": { "type": "boolean" }
+      },
+      "required": ["userId", "type", "startTime", "status"]
+    },
+    "geofenceAlerts": {
+      "title": "Geofence Alert",
+      "description": "Logs alerts for geofencing breaches or security standard failures.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "alertType": { "type": "string", "enum": ["geofence_breach", "security_failure", "oversight_issue"] },
+        "severity": { "type": "string", "enum": ["high", "critical"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "details": { "type": "string" },
+        "resolved": { "type": "boolean" },
+        "resolvedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "alertType", "severity", "timestamp"]
+    },
+    "orgChart": {
+      "title": "Organizational Chart",
+      "description": "Stores the structure of the organization.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "structure": { "type": "array" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["structure", "updatedAt"]
+    },
+    "videoContext": {
+      "title": "Video Context",
+      "description": "Stores metadata for uploaded videos and their AI analysis results.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileSize": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "analyzing", "flagged", "positive", "resolved"] },
+        "analysisResult": { "type": "string" },
+        "isImportant": { "type": "boolean" },
+        "isVitalReview": { "type": "boolean" },
+        "incidentType": { "type": "string", "enum": ["staff", "client", "maintenance", "positive", "other"] },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "reviewedBy": { "type": "string" },
+        "marketingConsent": { "type": "boolean" },
+        "failSafeTriggered": { "type": "boolean" },
+        "alertsSentTo": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["userId", "videoUrl", "status", "isImportant", "isVitalReview", "incidentType", "uploadedAt"]
+    },
+    "chatHistory": {
+      "title": "Chat History",
+      "description": "Stores persistent chat history for users and AI agents.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "agentType": { "type": "string" },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string", "enum": ["user", "model"] },
+              "parts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": { "type": "string" }
+                  }
+                }
+              },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "messages", "updatedAt"]
+    },
+    "auditLogs": {
+      "title": "Audit Log",
+      "description": "Stores high-level system and manual audit events for administrative review.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "action": { "type": "string" },
+        "user": { "type": "string" },
+        "details": { "type": "string" },
+        "type": { "type": "string", "enum": ["system", "manual", "override"] }
+      },
+      "required": ["timestamp", "action", "user", "type"]
+    },
+    "leads": {
+      "title": "Lead",
+      "description": "Stores potential client leads and their preliminary analysis results.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "initials": { "type": "string" },
+        "medicaidId": { "type": "string" },
+        "primaryDiagnosis": { "type": "string" },
+        "behavioralRisk": { "type": "string" },
+        "preliminaryTier": { "type": "string", "enum": ["A", "B", "C", "D", "E", "F"] },
+        "status": { "type": "string", "enum": ["new", "qualified", "intake-scheduled", "admitted"] },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "source": { "type": "string" }
+      },
+      "required": ["medicaidId", "status", "submittedAt"]
+    },
+    "incidentReports": {
+      "title": "Incident Report (State Auditor Mode)",
+      "description": "Critical failsafe logs for emergencies, unusual circumstances, and safety breaches.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["emergency", "safety_breach", "unusual_circumstance", "compliance_gap"] },
+        "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "address": { "type": "string" }
+          }
+        },
+        "details": { "type": "string" },
+        "witnesses": { "type": "array", "items": { "type": "string" } },
+        "actionTaken": { "type": "string" },
+        "reportedToState": { "type": "boolean" },
+        "stateRefNumber": { "type": "string" },
+        "resolved": { "type": "boolean" }
+      },
+      "required": ["type", "severity", "timestamp", "details"]
+    },
+    "securityAlerts": {
+      "title": "Security Alert (Shield Mode)",
+      "description": "Critical alerts for unauthorized access, PHI exports, or historical record breaches.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["unauthorized_device", "phi_export", "historical_access_violation", "third_party_access"] },
+        "severity": { "type": "string", "enum": ["high", "critical"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "details": { "type": "string" },
+        "deviceFingerprint": { "type": "string" },
+        "notifiedUplines": { "type": "boolean" },
+        "notifiedExecutive": { "type": "boolean" },
+        "resolved": { "type": "boolean" }
+      },
+      "required": ["type", "severity", "timestamp", "userId"]
+    },
+    "phiAccessLogs": {
+      "title": "PHI Access Log",
+      "description": "Detailed logs of any access to Protected Health Information.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "patientId": { "type": "string" },
+        "resourceType": { "type": "string" },
+        "action": { "type": "string", "enum": ["view", "export", "print", "delete"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "isAuthorized": { "type": "boolean" },
+        "deviceInfo": { "type": "string" }
+      },
+      "required": ["userId", "patientId", "action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "users",
+      "description": "User profiles indexed by UID."
+    },
+    "/appointments/{id}": {
+      "schema": "appointments",
+      "description": "All appointments."
+    },
+    "/formSubmissions/{id}": {
+      "schema": "formSubmissions",
+      "description": "All form submissions."
+    },
+    "/tourBookings/{id}": {
+      "schema": "tourBookings",
+      "description": "Virtual tour bookings."
+    },
+    "/complianceUpdates/{id}": {
+      "schema": "complianceUpdates",
+      "description": "Compliance updates from regulatory bodies."
+    },
+    "/facilityPresence/{uid}": {
+      "schema": "facilityPresence",
+      "description": "Real-time presence and geofence status."
+    },
+    "/billingLogs/{id}": {
+      "schema": "billingLogs",
+      "description": "Billing records and activity tracking."
+    },
+    "/geofenceAlerts/{id}": {
+      "schema": "geofenceAlerts",
+      "description": "Security and geofencing alerts for executive response."
+    },
+    "/orgChart/{id}": {
+      "schema": "orgChart",
+      "description": "The current organizational chart."
+    },
+    "/accessLogs/{id}": {
+      "schema": "accessLogs",
+      "description": "Security audit logs."
+    },
+    "/licensing/{id}": {
+      "schema": "licensing",
+      "description": "Client licensing records."
+    },
+    "/applications/{id}": {
+      "schema": "applications",
+      "description": "Job applications and interest forms."
+    },
+    "/videoContext/{id}": {
+      "schema": "videoContext",
+      "description": "Metadata and AI analysis for uploaded videos."
+    },
+    "/chatHistory/{id}": {
+      "schema": "chatHistory",
+      "description": "Persistent chat history for users."
+    },
+    "/trainingModules/{id}": {
+      "schema": "trainingModules",
+      "description": "Global definitions of available training courses."
+    },
+    "/staffTraining/{id}": {
+      "schema": "staffTraining",
+      "description": "Individual training completion records for staff."
+    },
+    "/reimbursementRequests/{id}": {
+      "schema": "reimbursementRequests",
+      "description": "Staff requests for continuing education reimbursement."
+    },
+    "/auditLogs/{id}": {
+      "schema": "auditLogs",
+      "description": "System-wide audit event logs."
+    },
+    "/leads/{id}": {
+      "schema": "leads",
+      "description": "Client intake leads."
+    },
+    "/incidentReports/{id}": {
+      "schema": "incidentReports",
+      "description": "Critical incident reports for state compliance."
+    },
+    "/securityAlerts/{id}": {
+      "schema": "securityAlerts",
+      "description": "Critical security alerts for Shield Mode response."
+    },
+    "/phiAccessLogs/{id}": {
+      "schema": "phiAccessLogs",
+      "description": "Detailed PHI access audit logs."
+    }
+  }
+}

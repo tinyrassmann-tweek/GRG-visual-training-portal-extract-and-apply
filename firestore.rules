@@ -1,0 +1,271 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // PILLAR 3: Global Safety Net & Denial by Default
+    // -------------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // PILLAR 3: Primitive Helpers
+    // -------------------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Auth helpers using relational lookup (Pillar 1)
+    function getUserData(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             getUserData(request.auth.uid).role == role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        hasRole('admin') || 
+        request.auth.token.email == "tiny.rassmann@gmail.com" ||
+        request.auth.token.email == "tiny.rasman@gmail.com" ||
+        request.auth.token.email.endsWith('@thinktanksolutionsai.com') ||
+        request.auth.token.email.endsWith('@thinktanksolutionsai.co.site')
+      );
+    }
+
+    function isStaff() {
+      return isSignedIn() && (hasRole('staff') || hasRole('doctor') || isAdmin() || isThinkTankStaff());
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isThinkTankStaff() {
+      return isSignedIn() && (
+        request.auth.token.email.endsWith('@thinktanksolutionsai.com') ||
+        request.auth.token.email.endsWith('@thinktanksolutionsai.co.site') ||
+        request.auth.token.email == "tiny.rassmann@gmail.com" ||
+        request.auth.token.email == "tiny.rasman@gmail.com"
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // PILLAR 2: Validation Blueprints (Anti-Update-Gap)
+    // -------------------------------------------------------------------------
+
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             data.email is string && data.email.size() <= 100 &&
+             data.role in ['patient', 'staff', 'admin', 'doctor'] &&
+             (data.keys().hasAll(['uid', 'email', 'role']));
+    }
+
+    function isValidAppointment(data) {
+      return data.patientId is string && isValidId(data.patientId) &&
+             data.doctorId is string && isValidId(data.doctorId) &&
+             data.status in ['pending', 'confirmed', 'cancelled', 'completed'] &&
+             data.date is string && data.time is string;
+    }
+
+    function isValidGeofenceAlert(data) {
+      return data.userId is string && isValidId(data.userId) &&
+             data.alertType is string &&
+             data.severity in ['high', 'critical'] &&
+             data.timestamp is string;
+    }
+
+    function isValidStaffTraining(data) {
+      return data.staffId is string && isValidId(data.staffId) &&
+             data.moduleId is string && isValidId(data.moduleId) &&
+             data.status in ['assigned', 'in_progress', 'completed', 'expired', 'needs_renewal'];
+    }
+
+    function isValidAuditLog(data) {
+      return data.timestamp is string &&
+             data.action is string &&
+             data.user is string &&
+             data.type in ['system', 'manual', 'override'];
+    }
+
+    function isValidChatHistory(data) {
+      return data.userId == request.auth.uid &&
+             data.messages is list &&
+             data.updatedAt is string;
+    }
+
+    function isValidIncidentReport(data) {
+      return data.type in ['emergency', 'safety_breach', 'unusual_circumstance', 'compliance_gap'] &&
+             data.severity in ['low', 'medium', 'high', 'critical'] &&
+             data.timestamp is string &&
+             data.details is string && data.details.size() <= 5000;
+    }
+
+    // -------------------------------------------------------------------------
+    // MATCH BLOCKS
+    // -------------------------------------------------------------------------
+
+    // Users Collection
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid) && isValidUser(incoming());
+      allow update: if (isOwner(uid) || isAdmin()) && (
+        // Only allow certain fields to be updated by the user
+        (isOwner(uid) && !incoming().diff(existing()).affectedKeys().hasAny(['role', 'uid', 'email'])) ||
+        isAdmin()
+      );
+    }
+
+    // Appointments Collection
+    match /appointments/{id} {
+      allow read: if isSignedIn() && (resource.data.patientId == request.auth.uid || resource.data.doctorId == request.auth.uid || isStaff() || hasRole('family'));
+      allow create: if isSignedIn() && isValidAppointment(incoming());
+      allow update: if isSignedIn() && (resource.data.patientId == request.auth.uid || resource.data.doctorId == request.auth.uid || isStaff()) && 
+                    isValidAppointment(incoming());
+      allow delete: if isAdmin() || isThinkTankStaff();
+    }
+
+    // Form Submissions (Leads, SOPs, etc.)
+    match /formSubmissions/{id} {
+      allow read: if isStaff() || (resource != null && resource.data.userId == request.auth.uid);
+      allow create: if true; // Public leads allowed
+      allow update: if isStaff();
+      allow delete: if isAdmin() || isThinkTankStaff();
+    }
+
+    // Compliance Updates
+    match /complianceUpdates/{id} {
+      allow read: if isStaff();
+      allow write: if isAdmin() || isThinkTankStaff();
+    }
+
+    // Tour Bookings
+    match /tourBookings/{id} {
+      allow read: if isStaff();
+      allow create: if true;
+      allow update, delete: if isAdmin() || isThinkTankStaff();
+    }
+
+    // Facility Presence
+    match /facilityPresence/{uid} {
+      allow read: if isStaff() || isOwner(uid);
+      allow write: if isOwner(uid) || isStaff();
+    }
+
+    // Billing Logs
+    match /billingLogs/{id} {
+      allow read, create: if isStaff();
+      allow update, delete: if isAdmin() || isThinkTankStaff();
+    }
+
+    // Geofence & Security Alerts
+    match /geofenceAlerts/{id} {
+      allow read: if isStaff();
+      allow create: if isSignedIn() && isValidGeofenceAlert(incoming());
+      allow update: if isAdmin() || isThinkTankStaff();
+    }
+
+    match /securityAlerts/{id} {
+      allow read: if isAdmin() || isThinkTankStaff();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || isThinkTankStaff();
+    }
+
+    // Staff Development
+    match /trainingModules/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isThinkTankStaff();
+    }
+
+    match /staffTraining/{id} {
+      allow read: if isSignedIn() && (resource.data.staffId == request.auth.uid || isStaff());
+      allow create: if isStaff() && isValidStaffTraining(incoming());
+      allow update: if isSignedIn() && (resource.data.staffId == request.auth.uid || isStaff()) && isValidStaffTraining(incoming());
+      allow delete: if isAdmin() || isThinkTankStaff();
+    }
+
+    match /reimbursementRequests/{id} {
+      allow read: if isSignedIn() && (resource.data.staffId == request.auth.uid || isStaff());
+      allow create: if isStaff();
+      allow update, delete: if isAdmin() || isThinkTankStaff();
+    }
+
+    // Logs & Audits
+    match /auditLogs/{id} {
+      allow read: if isAdmin() || isThinkTankStaff();
+      allow create: if isSignedIn() && isValidAuditLog(incoming());
+    }
+
+    match /accessLogs/{id} {
+      allow read: if isAdmin() || isThinkTankStaff();
+      allow create: if isSignedIn();
+    }
+
+    match /phiAccessLogs/{id} {
+      allow read: if isAdmin() || isThinkTankStaff();
+      allow create: if isSignedIn();
+    }
+
+    // Chat History
+    match /chatHistory/{id} {
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidChatHistory(incoming());
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Organizational & Corporate
+    match /orgChart/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isThinkTankStaff();
+    }
+
+    match /licensing/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isThinkTankStaff();
+    }
+
+    match /applications/{id} {
+      allow read: if isStaff();
+      allow create: if true;
+      allow update, delete: if isAdmin() || isThinkTankStaff();
+    }
+
+    match /videoContext/{id} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaff());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isStaff() || (isOwner(resource.data.userId) && !('status' in incoming()));
+    }
+
+    match /incidentReports/{id} {
+      allow read: if isStaff();
+      allow create: if isSignedIn() && isValidIncidentReport(incoming());
+      allow update, delete: if isAdmin() || isThinkTankStaff();
+    }
+
+    match /leads/{id} {
+      allow read, write: if isStaff();
+    }
+
+  }
+}
+
